@@ -1,0 +1,1 @@
+A behavior pack based on the GameTest Framework for Minecraft: Bedrock Edition, which enables simulated player manipulation with command (still in development), teleport accept system, launchable fireball etc..

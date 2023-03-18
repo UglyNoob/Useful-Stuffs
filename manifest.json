@@ -1,0 +1,43 @@
+{
+	"format_version": 2,
+	"header": {
+		"description": "This behavior pack introduces some stuffs to the game, for example the launchable fireball.",
+		"name": "Useful Stuffs",
+		"uuid": "9bbd9603-a3c6-d982-2584-66bb4a369dbd",
+		"version": [0, 0, 1],
+		"min_engine_version": [1, 19, 0]
+	},
+	"modules": [
+		{
+			"desription": "Script module of Useful Stuffs",
+			"type": "script",
+			"language": "javascript",
+			"uuid": "5dbc5ac3-12f4-b730-532d-d1238e267346",
+			"version": [0, 0, 1],
+			"entry": "scripts/main.js"
+		},
+		{
+			"desrtiption": "This module introduces the spawnable fireball object, for example.",
+			"type": "data",
+			"version": [0, 0, 1],
+			"uuid": "1f7c0837-3e90-4bab-e0e3-2f05de43631c"
+		}
+	],
+	"dependencies": [
+		{
+			"module_name": "@minecraft/server-gametest",
+			"version": "1.0.0-beta"
+		},
+		{
+			"module_name": "@minecraft/server",
+			"version": "1.1.0-beta"
+		},
+		{
+			"module_name": "@minecraft/server-ui",
+			"version": "1.0.0-beta"
+		}
+	],
+	"capabilities": [
+		"script_eval"
+	]
+}
