@@ -2,7 +2,10 @@
 
 import {
 	world,
-	Player
+	system,
+	Player,
+	EntityDamageCause,
+	MinecraftEffectTypes
 } from '@minecraft/server';
 
 import * as cmd from './CommandRegistry.js';
@@ -14,7 +17,11 @@ const requiredSwordName = "ThunderSword";
 const lightningBoltType = "minecraft:lightning_bolt";
 const playerType = "minecraft:player";
 
+/*
+ * There two constant is to implement the functionality that a lightning spawner won't be hurt by the lightning bolt caused by himself.
+ */
 const lightningSpawnerSymbol = Symbol("lightningSpawnerSymbol");
+const lightningImmuneTimeout = 5; // 5 ticks
 
 {
 	let commandThunder = new cmd.Command("thunder");
@@ -33,9 +40,23 @@ const lightningSpawnerSymbol = Symbol("lightningSpawnerSymbol");
 }
 
 world.events.entityHurt.subscribe((event) => {
-	if(event.damageSource.damagingEntity !== undefined && event.damageSource.damagingEntity[lightningSpawnerSymbol] == event.hurtEntity) {
-		world.sendMessage(`Oh god! ${event.hurtEntity.name}`);
+	if(event.damageSource.cause == EntityDamageCause.lightning) {
+		let p = event.hurtEntity[lightningSpawnerSymbol]
+		if(p !== undefined && system.currentTick - p <= lightningImmuneTimeout) {
+			event.hurtEntity[lightningSpawnerSymbol] = undefined;
+
+			system.runTimeout(() => {
+				let healthComponent = event.hurtEntity.getComponent("minecraft:health");
+				healthComponent.setCurrent(healthComponent.current + event.damage);
+
+				let fireComponent = event.hurtEntity.getComponent("minecraft:onfire");
+				if(fireComponent !== undefined) {
+					event.hurtEntity.addEffect(MinecraftEffectTypes.fireResistance, fireComponent.onFireTicksRemaining, 0, false);
+				}
+			}, 0);
+		}
 	}
+
 });
 
 world.events.entityHit.subscribe((event) => {
@@ -60,8 +81,8 @@ world.events.entityHit.subscribe((event) => {
 			}
 		} else ifMakeLightning = true;
 		if (ifMakeLightning) {
-			let lightning = player.dimension.spawnEntity(lightningBoltType, location);
-			lightning[lightningSpawnerSymbol] = player;
+			player.dimension.spawnEntity(lightningBoltType, location);
+			player[lightningSpawnerSymbol] = system.currentTick;
 		}
 	}
 });

@@ -29,6 +29,10 @@ class CurrentBehavior {
 /** @type GameTest.Test */
 let test;
 
+// This symbol is used to record the birth place of a simulated player entity
+const initialSpawnSymbol = Symbol("initialSpawn");
+const simulatedPlayerRespawnTime = 20; // 20 ticks
+
 // DEBUG
 function stringifyObject(obj) {
 	let result = "";
@@ -98,6 +102,7 @@ function getGamemode(player){
 		let simulatedPlayer = test.spawnSimulatedPlayer(new Vector3(0, 0, 0), simulatedPlayerName, getGamemode(sender));
 		let {x, y} = sender.getRotation();
 		simulatedPlayer.teleport(sender.location, sender.dimension, x, y, false);
+		simulatedPlayer[initialSpawnSymbol] = [sender.location, sender.dimension, x, y, false];
 	}, (sender) => {
 		let message = "§eBasic syntax: \"§b#player <Simulated Player Name> spawn§e\".\n";
 		message += "§eSpawn a simulated player at caller's position, who has a same gamemode of caller's.\n";
@@ -181,6 +186,7 @@ function getGamemode(player){
 		}
 		if(inputArray.length >= 4) {
 			let code = inputArray.slice(3).join(" ");
+			let me = simulatedPlayer;
 			try {
 				eval(code);
 			} catch(E) {
@@ -252,6 +258,16 @@ function getGamemode(player){
 
 	globalCommandEngine.register(commandPlayer);
 }
+
+
+world.events.entityDie.subscribe((event) => {
+	// respawn dead simulated players
+	if(event.deadEntity.respawn === undefined) return;
+	system.runTimeout(() => {
+		event.deadEntity.respawn();
+		event.deadEntity.teleport.apply(event.deadEntity, event.deadEntity[initialSpawnSymbol]);
+	}, simulatedPlayerRespawnTime);
+});
 
 system.runInterval(() => {
 	/** @type GameTest.SimulatedPlayer[] */
