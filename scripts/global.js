@@ -4,7 +4,7 @@ import {world} from '@minecraft/server';
 export let globalCommandEngine = new CommandEngine();
 
 world.events.beforeChat.subscribe((event) => {
-	let result = globalCommandEngine.resolve(event.sender, event.message);
+	let result = globalCommandEngine.resolve(event.sender, event.message, false);
 
 	if (result.isCommand) event.cancel = true;
 });

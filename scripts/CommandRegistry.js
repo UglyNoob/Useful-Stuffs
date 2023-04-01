@@ -7,6 +7,7 @@ import {
  * @callback commandCalledCallback
  * @param {Player} sender
  * @param {Array} inputArray
+ * @param {Boolean} isScriptEvent
  */
 
 export class Command {
@@ -71,7 +72,7 @@ export class CommandEngine {
 				system.events.scriptEventReceive.unsubscribe(callback);
 			}
 			if(event.sourceEntity === undefined || event.sourceEntity.typeId !== "minecraft:player") return;
-			this.resolve(event.sourceEntity, '#' + event.message);
+			this.resolve(event.sourceEntity, '#' + event.message, true);
 		};
 		system.events.scriptEventReceive.subscribe(callback);
 	}
@@ -89,10 +90,11 @@ export class CommandEngine {
 	/**
 	 * @param {Player} sender
 	 * @param {String} input
+	 * @param {Boolean} isScriptEvent
 	 *
 	 * @return ResolveResult
 	 */
-	resolve(sender, input) {
+	resolve(sender, input, isScriptEvent) {
 		let result = new ResolveResult();
 		if(input.charAt(0) !== Command.prompt) return result;
 		result.isCommand = true;
@@ -106,7 +108,7 @@ export class CommandEngine {
 			}
 		});
 		if(result.doCommandExists) {
-			whichCommand && whichCommand.callback(sender, inputArr);
+			whichCommand.callback(sender, inputArr, isScriptEvent);
 		} else {
 			sender.sendMessage(`§cUnknown command "${inputArr[0]}". Please type "#help" for help.`);
 		}

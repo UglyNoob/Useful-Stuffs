@@ -1,5 +1,6 @@
 import {
-	Player
+	Player,
+	world
 } from '@minecraft/server';
 
 import * as ui from '@minecraft/server-ui'
@@ -37,6 +38,17 @@ export function alert(player, title, message) {
  */
 export function alertPermissionDenied(player) {
 	return alert(player, "§c§lPermission Denied", "§6I'm sorry, but you do not have the permission to perform this command. Please contact server administrators if you believe that this is in error.");
+}
+
+/**
+ * @param {String} name
+ */
+export function getPlayerFromName(name) {
+	let p = [...world.getPlayers({name: name})];
+	if(p.length == 1) {
+		return p[0];
+	}
+	return undefined;
 }
 
 export class Vector3 {

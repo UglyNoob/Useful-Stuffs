@@ -5,26 +5,72 @@ import {
 	system,
 	Player,
 	GameMode,
-	MinecraftBlockTypes
+	MinecraftBlockTypes,
+	ItemStack // DEBUG
 } from '@minecraft/server';
 
 import {alertPermissionDenied, Vector3} from './Utilities.js';
 
 import * as cmd from './CommandRegistry.js';
 
-import {globalCommandEngine} from './global.js'
+import {globalCommandEngine} from './Global.js'
 
-class CurrentBehavior {
-	static symbol = Symbol("currentBehavior");
-	static attackInterval = 0;
-	static useInterval = 1;
 
-	constructor(behaviorId, ...args) {
-		this.behaviorId = behaviorId;
-		this.lastTick = system.currentTick;
-		args.length >= 1 && (this.interval = Number(args[0]));
+let a = {}; // TEST DEBUG
+
+/**
+ * @callback BehaviorCallback
+ * @param {GameTest.SimulatedPlayer} player
+ * @param {any} value
+ */
+class BehaviorType {
+	/**
+	 * @param {Number} id
+	 * @param {BehaviorCallback} callback
+	 */
+	constructor(id, callback) { this.id = id; this.callback = callback;}
+};
+BehaviorType.useContinuous = new BehaviorType(0, (player) => {
+});
+BehaviorType.useInterval = new BehaviorType(1, (player, value) => {
+	if((system.currentTick - value.tick) % value.interval == 0) {
+		player.useItemInSlot(player.selectedSlot);
 	}
-}
+}); // value: {tick: number, interval: number}
+BehaviorType.attackContinuous = new BehaviorType(2);
+BehaviorType.attackInterval = new BehaviorType(3); // value: {tick: number, interval: number}
+BehaviorType
+
+class Behavior {
+	/*
+	 * SimualtedPlayer[symbol]: Behavior[]
+	 */
+	static symbol = Symbol("BehaviorOfSimulatedPlayer");
+
+	/**
+	 * @param {BehaviorType} type
+	 */
+	constructor(type, ...more) {
+		this.type = type;
+		if(more.length != 0) this.value = more[0];
+	}
+
+	/**
+	 * @param {GameTest.SimulatedPlayer} simuplayer
+	 * @param {Behavior} behavior
+	 */
+	static addBehavior(simuplayer, behavior) {
+		let behaviors = simuplayer[Behavior.symbol];
+		if(behavior === undefined) {
+			simuplayer[Behavior.symbol] = [behavior];
+			return;
+		}
+
+		let use = [BehaviorType.useContinuous, BehaviorType.useInterval];
+
+
+	}
+};
 
 /** @type GameTest.Test */
 let test;
@@ -35,6 +81,12 @@ const simulatedPlayerRespawnTime = 20; // 20 ticks
 
 // DEBUG
 function stringifyObject(obj) {
+	let type = typeof obj;
+	if(type != "object") {
+		let result = "§e" + type;
+		if(type != "function") result += " \"§a" + obj + "§e\"";
+		return result;
+	}
 	let result = "";
 	for(let key in obj) {
 		let value = obj[key];
@@ -103,6 +155,7 @@ function getGamemode(player){
 		let {x, y} = sender.getRotation();
 		simulatedPlayer.teleport(sender.location, sender.dimension, x, y, false);
 		simulatedPlayer[initialSpawnSymbol] = [sender.location, sender.dimension, x, y, false];
+		// simulatedPlayer.useItemInSlot(0); DEBUG
 	}, (sender) => {
 		let message = "§eBasic syntax: \"§b#player <Simulated Player Name> spawn§e\".\n";
 		message += "§eSpawn a simulated player at caller's position, who has a same gamemode of caller's.\n";
@@ -159,7 +212,7 @@ function getGamemode(player){
 			return;
 		}
 		if(inputArray[3] == "interval") {
-			simulatedPlayer[CurrentBehavior.symbol] = new CurrentBehavior(CurrentBehavior.attackInterval, Number(inputArray[4], 10));
+			// simulatedPlayer[CurrentBehavior.symbol] = new CurrentBehavior(CurrentBehavior.attackInterval, Number(inputArray[4], 10));
 
 			return;
 		}
@@ -171,7 +224,7 @@ function getGamemode(player){
 	}));
 
 	subCommands._register(new SubCommand("run", (sender, inputArray) => {
-		// TODO
+		// TODO DEBUG
 		const simulatedPlayerName = inputArray[1];
 		/** @type GameTest.SimulatedPlayer*/
 		let simulatedPlayer = [...world.getPlayers({ name: simulatedPlayerName })];
@@ -187,6 +240,8 @@ function getGamemode(player){
 		if(inputArray.length >= 4) {
 			let code = inputArray.slice(3).join(" ");
 			let me = simulatedPlayer;
+			let you = [...world.getPlayers({name: "SkeletonSquid12"})][0];
+			//me.interactWithBloc
 			try {
 				eval(code);
 			} catch(E) {
@@ -274,15 +329,15 @@ system.runInterval(() => {
 	let simulatedPlayers = [...world.getPlayers()].filter(p => { return p.attack !== undefined });
 
 	for(let player of simulatedPlayers) {
-		if(player[CurrentBehavior.symbol] === undefined) continue;
+		// if(player[CurrentBehavior.symbol] === undefined) continue;
 		/** @type CurrentBehavior*/
-		let cb = player[CurrentBehavior.symbol];
+		/*let cb = player[CurrentBehavior.symbol];
 		if(cb.behaviorId == CurrentBehavior.attackInterval) {
 			if(system.currentTick % cb.lastTick >= cb.interval) {
 				player.attack();
 				cb.lastTick = system.currentTick;
 			}
-		}
+		}*/
 	}
 });
 

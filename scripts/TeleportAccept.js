@@ -1,6 +1,6 @@
 import * as cmd from './CommandRegistry.js';
 
-import { globalCommandEngine } from './global.js';
+import { globalCommandEngine } from './Global.js';
 
 import {
 	Player,

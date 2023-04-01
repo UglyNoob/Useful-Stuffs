@@ -9,7 +9,7 @@ import {
 } from '@minecraft/server';
 
 import * as cmd from './CommandRegistry.js';
-import {globalCommandEngine} from './global.js';
+import {globalCommandEngine} from './Global.js';
 
 const requiredTag = "TheChosenOne_ThunderSwordOwner";
 const requiredSwordName = "ThunderSword";
@@ -56,7 +56,6 @@ world.events.entityHurt.subscribe((event) => {
 			}, 0);
 		}
 	}
-
 });
 
 world.events.entityHit.subscribe((event) => {

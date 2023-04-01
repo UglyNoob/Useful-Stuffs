@@ -4,6 +4,8 @@ import {
 	world,
 	system,
 	ItemStack,
+	Player,
+	Entity,
 	MinecraftItemTypes,
 	MinecraftEntityTypes,
 	DynamicPropertiesDefinition
@@ -12,13 +14,15 @@ import {
 import {
 	ActionFormData,
 	ModalFormData,
-	MessageFormData
+	MessageFormData,
+	ActionFormResponse,
+	FormCancelationReason
 } from '@minecraft/server-ui';
 
 import {alert, alertPermissionDenied} from './Utilities.js';
 
 import * as cmd from './CommandRegistry.js';
-import {globalCommandEngine} from './global.js';
+import {globalCommandEngine} from './Global.js';
 
 const triggerItem = new ItemStack(MinecraftItemTypes.stick, 1);
 triggerItem.nameTag = "§r§b§lEntity Components Viewer§r";
@@ -64,6 +68,70 @@ isTriggerItem = isTriggerItem.bind(null, triggerItem);
 	});
 
 	globalCommandEngine.register(commandComponent);
+}
+
+
+/**
+ * @param {Player} player
+ * @param {Entity} entity
+ *
+ * @return {Promise<void>}
+ */
+export async function showComponentOfEntity(player, entity) {
+	try{
+	let components = entity.getComponents();
+	let componentsShowerMenu;
+	let promiseResolve;
+	let promise = new Promise((resolve) => { promiseResolve = resolve; });
+
+	/** @param {ActionFormResponse} response */
+	let componentsShowerMenuCallback = function(response) {
+		if(response.canceled) {
+			if(response.cancelationReason == FormCancelationReason.userBusy) {
+				player.sendMessage("You should not be so busy");
+				componentsShowerMenu.show(player).then(componentsShowerMenuCallback);
+			} else if(response.cancelationReason == FormCancelationReason.userClosed) {
+				promiseResolve();
+			}
+			return;
+		};
+
+		let component = components[response.selection];
+
+		let componentDetailShowerMenu = new MessageFormData();
+		componentDetailShowerMenu.title("§e§l" + component.typeId);
+		componentDetailShowerMenu.body(stringifyComponentObject(component));
+		componentDetailShowerMenu.button1("§3§lRefresh");
+		componentDetailShowerMenu.button2("§2§lBack");
+
+		let componentDetailShowerMenuCallback = (response) => {
+			if(response.canceled) {
+				promiseResolve();
+				return;
+			}
+			if(response.selection == 1) { // REFRESH BUTTON SELECTED
+				componentDetailShowerMenu.body(stringifyComponentObject(component));
+				componentDetailShowerMenu.show(player).then(componentDetailShowerMenuCallback);
+			} else { // BACK BUTTON SELECTED
+				componentsShowerMenu.show(player).then(componentsShowerMenuCallback);
+			}
+		};
+
+		componentDetailShowerMenu.show(player).then(componentDetailShowerMenuCallback);
+	};
+	componentsShowerMenu = new ActionFormData();
+	componentsShowerMenu.title("§2§l" + entity.typeId);
+	for(let component of components) {
+		componentsShowerMenu.button(component.typeId);
+	}
+	componentsShowerMenu.show(player).then(componentsShowerMenuCallback);
+	world.sendMessage("5");
+
+	await promise;
+	world.sendMessage("6");
+	return;
+
+	} catch(E) { world.sendMessage(String(E)); } // DEBUG
 }
 
 function before_item_use_callback(event) {
